@@ -31,13 +31,6 @@ public class UserDaoJDBCImpl implements UserDao {
                             + ",`name` VARCHAR(45) NOT NULL, `lastName` VARCHAR(45) NOT NULL,  `age` INT NOT NULL ) ENGINE=MEMORY;");
             conn.commit();
             System.out.println("User table have been created");
-        } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
-            }
-            System.out.println("Cant create table:" + e.getMessage());
         } catch (Exception e) {
             try {
                 conn.rollback();
@@ -46,16 +39,16 @@ public class UserDaoJDBCImpl implements UserDao {
             }
             System.out.println("Cant create table:" + e.getMessage());
         } finally {
-            if (conn != null) {
+            if (statement != null) {
                 try {
-                    conn.close();
+                    statement.close();
                 } catch (SQLException e) {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
             }
-            if (statement != null) {
+            if (conn != null) {
                 try {
-                    statement.close();
+                    conn.close();
                 } catch (SQLException e) {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
@@ -72,13 +65,6 @@ public class UserDaoJDBCImpl implements UserDao {
             statement.executeUpdate("DROP TABLE IF EXISTS sys.users ;");
             conn.commit();
             System.out.println("User table have been droped");
-        } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
-            }
-            System.out.println("Cant drop table:" + e.getMessage());
         } catch (Exception e) {
             try {
                 conn.rollback();
@@ -87,13 +73,6 @@ public class UserDaoJDBCImpl implements UserDao {
             }
             System.out.println("Cant drop table:" + e.getMessage());
         } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.out.println("Cant close connection:" + e.getMessage());
-                }
-            }
             if (statement != null) {
                 try {
                     statement.close();
@@ -101,6 +80,14 @@ public class UserDaoJDBCImpl implements UserDao {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
             }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+
         }
     }
 
@@ -116,13 +103,6 @@ public class UserDaoJDBCImpl implements UserDao {
             prSt.executeUpdate();
             conn.commit();
             System.out.println("User have been saved");
-        } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
-            }
-            System.out.println("Cant save user:" + e.getMessage());
         } catch (Exception e) {
             try {
                 conn.rollback();
@@ -131,16 +111,16 @@ public class UserDaoJDBCImpl implements UserDao {
             }
             System.out.println("Cant save user:" + e.getMessage());
         } finally {
-            if (conn != null) {
+            if (prSt != null) {
                 try {
-                    conn.close();
+                    prSt.close();
                 } catch (SQLException e) {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
             }
-            if (prSt != null) {
+            if (conn != null) {
                 try {
-                    prSt.close();
+                    conn.close();
                 } catch (SQLException e) {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
@@ -158,13 +138,6 @@ public class UserDaoJDBCImpl implements UserDao {
             prSt.executeUpdate();
             conn.commit();
             System.out.println("User have been removed");
-        } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
-            }
-            System.out.println("Cant delete user:" + e.getMessage());
         } catch (Exception e) {
             try {
                 conn.rollback();
@@ -173,13 +146,6 @@ public class UserDaoJDBCImpl implements UserDao {
             }
             System.out.println("Cant delete user:" + e.getMessage());
         } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.out.println("Cant close connection:" + e.getMessage());
-                }
-            }
             if (prSt != null) {
                 try {
                     prSt.close();
@@ -187,6 +153,14 @@ public class UserDaoJDBCImpl implements UserDao {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
             }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+
         }
     }
 
@@ -194,28 +168,17 @@ public class UserDaoJDBCImpl implements UserDao {
         List<User> userList = new ArrayList<User>();
         Connection conn = null;
         Statement statement = null;
-        ResultSet reSet;
+        ResultSet reSet = null;
         try {
             conn = util.getConnetion();
             statement = conn.createStatement();
             reSet = statement.executeQuery("SELECT * FROM sys.users");
             conn.commit();
             while (reSet.next()) {
-                userList.add(new User(reSet.getString(2), reSet.getString(3), reSet.getByte(4)) {
-                    {
-                        setId(reSet.getLong(1));
-                    }
-
-                });
+                User user = new User(reSet.getString(2), reSet.getString(3), reSet.getByte(4));
+                userList.add(user);
             }
 
-        } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
-            }
-            System.out.println("Cant get users:" + e.getMessage());
         } catch (Exception e) {
             try {
                 conn.rollback();
@@ -224,16 +187,23 @@ public class UserDaoJDBCImpl implements UserDao {
             }
             System.out.println("Cant get users:" + e.getMessage());
         } finally {
-            if (conn != null) {
+            if (reSet != null) {
                 try {
-                    conn.close();
+                    reSet.close();
                 } catch (SQLException e) {
-                    System.out.println("Cant close connection:" + e.getMessage());
+                    System.out.println("Cant close ResultSet:" + e.getMessage());
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
                 } catch (SQLException e) {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
@@ -247,17 +217,10 @@ public class UserDaoJDBCImpl implements UserDao {
         PreparedStatement prSt = null;
         try {
             conn = util.getConnetion();
-            prSt = conn.prepareStatement("DELETE  FROM sys.users ");
+            prSt = conn.prepareStatement("TRUNCATE TABLE sys.users ");
             prSt.executeUpdate();
             conn.commit();
             System.out.println("User table have been cleaned");
-        } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
-            }
-            System.out.println("Cant clean user table:" + e.getMessage());
         } catch (Exception e) {
             try {
                 conn.rollback();
@@ -266,13 +229,6 @@ public class UserDaoJDBCImpl implements UserDao {
             }
             System.out.println("Cant clean user table:" + e.getMessage());
         } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.out.println("Cant close connection:" + e.getMessage());
-                }
-            }
             if (prSt != null) {
                 try {
                     prSt.close();
@@ -280,6 +236,14 @@ public class UserDaoJDBCImpl implements UserDao {
                     System.out.println("Cant close connection:" + e.getMessage());
                 }
             }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+
         }
     }
 
