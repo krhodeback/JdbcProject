@@ -14,72 +14,192 @@ import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
 public class UserDaoJDBCImpl implements UserDao {
-    private static final String CREATE_SCRIPT = "CREATE TABLE IF NOT EXISTS sys.users (  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY "
-            + ",`name` VARCHAR(45) NOT NULL, `lastName` VARCHAR(45) NOT NULL,  `age` INT NOT NULL ) ENGINE=MEMORY;";
-    private static final String DELETE_SCRIPT = "DROP TABLE IF EXISTS sys.users ;";
-    private static final String INSERT_USER = "INSERT INTO sys.users (name,lastName,age) VALUES (?,?,?)";
-    private static final String DELETE_USER = "DELETE  FROM sys.users WHERE id = ?";
-    private static final String DELETE_ALL_USERS = "DELETE  FROM sys.users ";
-    private static final String FIND_ALL_USERS = "SELECT * FROM sys.users";
     private Util util;
-    private Logger log;
 
     public UserDaoJDBCImpl() {
         util = new Util();
-        log = Logger.getLogger("UserDaoJDBCImpl");
     }
 
     public void createUsersTable() {
+        Connection conn = null;
+        Statement statement = null;
         try {
-            scriptRun(CREATE_SCRIPT);
-            log.log(Level.INFO, "Tables have been created");
+            conn = util.getConnetion();
+            statement = conn.createStatement();
+            statement.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS sys.users (  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY "
+                            + ",`name` VARCHAR(45) NOT NULL, `lastName` VARCHAR(45) NOT NULL,  `age` INT NOT NULL ) ENGINE=MEMORY;");
+            conn.commit();
+            System.out.println("User table have been created");
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant create table:" + e.getMessage());
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Cant create tebles");
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant create table:" + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
         }
     }
 
     public void dropUsersTable() {
+        Connection conn = null;
+        Statement statement = null;
         try {
-            scriptRun(DELETE_SCRIPT);
-            log.log(Level.INFO, "Tables have been deleted");
+            conn = util.getConnetion();
+            statement = conn.createStatement();
+            statement.executeUpdate("DROP TABLE IF EXISTS sys.users ;");
+            conn.commit();
+            System.out.println("User table have been droped");
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant drop table:" + e.getMessage());
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Cant delete tables");
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant drop table:" + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
         }
     }
 
     public void saveUser(String name, String lastName, byte age) {
-        try (Connection connection = util.getConnetion();
-                PreparedStatement prSt = connection.prepareStatement(INSERT_USER)) {
+        Connection conn = null;
+        PreparedStatement prSt = null;
+        try {
+            conn = util.getConnetion();
+            prSt = conn.prepareStatement("INSERT INTO sys.users (name,lastName,age) VALUES (?,?,?)");
             prSt.setString(1, name);
             prSt.setString(2, lastName);
             prSt.setByte(3, age);
             prSt.executeUpdate();
-            log.log(Level.INFO, "User " + name + " have been added");
+            conn.commit();
+            System.out.println("User have been saved");
         } catch (SQLException e) {
-            log.log(Level.SEVERE, "Cant add user", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant save user:" + e.getMessage());
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Cant add user", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant save user:" + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+            if (prSt != null) {
+                try {
+                    prSt.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
         }
     }
 
     public void removeUserById(long id) {
-        try (Connection connection = util.getConnetion();
-                PreparedStatement prSt = connection.prepareStatement(DELETE_USER)) {
+        Connection conn = null;
+        PreparedStatement prSt = null;
+        try {
+            conn = util.getConnetion();
+            prSt = conn.prepareStatement("DELETE  FROM sys.users WHERE id = ?");
             prSt.setLong(1, id);
             prSt.executeUpdate();
-            log.log(Level.INFO, "User have been deleted");
+            conn.commit();
+            System.out.println("User have been removed");
         } catch (SQLException e) {
-            log.log(Level.SEVERE, "Cant remove user", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant delete user:" + e.getMessage());
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Cant remove user", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant delete user:" + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+            if (prSt != null) {
+                try {
+                    prSt.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
         }
     }
 
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<User>();
-        try (Connection connection = util.getConnetion();
-                Statement statement = connection.createStatement();
-                ResultSet reSet = statement.executeQuery(FIND_ALL_USERS)) {
+        Connection conn = null;
+        Statement statement = null;
+        ResultSet reSet;
+        try {
+            conn = util.getConnetion();
+            statement = conn.createStatement();
+            reSet = statement.executeQuery("SELECT * FROM sys.users");
+            conn.commit();
             while (reSet.next()) {
                 userList.add(new User(reSet.getString(2), reSet.getString(3), reSet.getByte(4)) {
                     {
@@ -88,34 +208,79 @@ public class UserDaoJDBCImpl implements UserDao {
 
                 });
             }
+
         } catch (SQLException e) {
-            log.log(Level.SEVERE, "Cant get all users", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant get users:" + e.getMessage());
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Cant get all users", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant get users:" + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
         }
         return userList;
     }
 
     public void cleanUsersTable() {
-        try (Connection connection = util.getConnetion();
-                PreparedStatement prSt = connection.prepareStatement(DELETE_ALL_USERS)) {
+        Connection conn = null;
+        PreparedStatement prSt = null;
+        try {
+            conn = util.getConnetion();
+            prSt = conn.prepareStatement("DELETE  FROM sys.users ");
             prSt.executeUpdate();
-            log.log(Level.INFO, "All users have been deleted");
+            conn.commit();
+            System.out.println("User table have been cleaned");
         } catch (SQLException e) {
-            log.log(Level.SEVERE, "Cant remove users", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant clean user table:" + e.getMessage());
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Cant remove users", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("An error occurred while trying to rollback :" + ex.getMessage());
+            }
+            System.out.println("Cant clean user table:" + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
+            if (prSt != null) {
+                try {
+                    prSt.close();
+                } catch (SQLException e) {
+                    System.out.println("Cant close connection:" + e.getMessage());
+                }
+            }
         }
     }
 
-    private void scriptRun(String script) throws Exception {
-        try (Connection conn = util.getConnetion(); Statement statement = conn.createStatement()) {
-            statement.executeUpdate(script);
-            log.log(Level.INFO, "Tables have been changed");
-        } catch (SQLException e) {
-            log.log(Level.SEVERE, "Cant run script", e);
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Cant run script", e);
-        }
-    }
 }
