@@ -57,6 +57,7 @@ public class Util {
         prop.setProperty("hibernate.connection.username", USER_NAME);
         prop.setProperty("hibernate.connection.password", PASSWORD);
         prop.setProperty("hibernate.show_sql", "true");
+        prop.setProperty("hibernate.connection.autocommit", "false");
 //        prop.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
         configuration = new Configuration().addAnnotatedClass(User.class).setProperties(prop);
 

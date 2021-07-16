@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.resource.transaction.spi.TransactionStatus;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
 
@@ -33,28 +34,60 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void saveUser(String name, String lastName, byte age) {
         Session session = util.getSession();
-        session.save(new User(name, lastName, age));
-        session.close();
+        Transaction transaction = null;
+        User user = new User(name, lastName, age);
+        try {
+            transaction = session.beginTransaction();
+            session.save(user);
+            transaction.commit();
+            System.out.println("User " + user.getName() + " have been saved");
+        } catch (Exception e) {
+            try {
+                if (transaction != null) {
+                    transaction.rollback();
+                }
+            } catch (Exception e1) {
+                System.out.println("Cant rollback : " + e1.getMessage());
+            }
+            System.out.println("Cant save user : " + e.getMessage());
+        } finally {
+            session.close();
+        }
     }
 
     @Override
     public void removeUserById(long id) {
         Session session = util.getSession();
-        Transaction transaction = session.getTransaction();
-        transaction.begin();
-        User user = (User) session.load(User.class, id);
-        if (user != null) {
-            session.delete(user);
+        Transaction transaction = null;
+        try {
+            transaction = session.beginTransaction();
+            User user = (User) session.load(User.class, id);
+            if (user != null) {
+                session.delete(user);
+            }
+            transaction.commit();
+            System.out.println("User " + user.getName() + " have been removed");
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            System.out.println("Cant remove user : " + e.getMessage());
+        } finally {
+            session.close();
         }
-        transaction.commit();
-        session.close();
     }
 
     @Override
     public List<User> getAllUsers() {
         Session session = util.getSession();
-        List<User> userList = session.createQuery("SELECT a FROM User a", User.class).getResultList();
-        session.close();
+        List<User> userList = null;
+        try {
+            userList = session.createQuery("SELECT a FROM User a", User.class).getResultList();
+        } catch (Exception e) {
+            System.out.println("Cant get all users : " + e.getMessage());
+        } finally {
+            session.close();
+        }
         return userList;
     }
 
