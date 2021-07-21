@@ -7,8 +7,6 @@ import java.util.Properties;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.Metadata;
-import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
@@ -24,7 +22,6 @@ public class Util {
     private ServiceRegistry serviceRegistry;
 
     public Util() {
-        setProperties();
     }
 
     public Connection getConnetion() throws Exception {
@@ -39,28 +36,18 @@ public class Util {
     }
 
     public Session getSession() {
-        SessionFactory sf = configuration.buildSessionFactory(serviceRegistry);
-        return sf.openSession();
-    }
-
-    public Metadata getMetadata() {
-        MetadataSources metadata = new MetadataSources(serviceRegistry);
-        metadata.addAnnotatedClass(User.class);
-        return metadata.buildMetadata();
-
-    }
-
-    private void setProperties() {
         Properties prop = new Properties();
         prop.setProperty("connection.driver_class", DRIVERS);
         prop.setProperty("hibernate.connection.url", URL);
         prop.setProperty("hibernate.connection.username", USER_NAME);
         prop.setProperty("hibernate.connection.password", PASSWORD);
         prop.setProperty("hibernate.connection.autocommit", "false");
+        prop.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
+        prop.setProperty("hbm2ddl.auto", "none");
         configuration = new Configuration().addAnnotatedClass(User.class).setProperties(prop);
-
         serviceRegistry = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
-
+        SessionFactory sf = configuration.buildSessionFactory(serviceRegistry);
+        return sf.openSession();
     }
 
 }

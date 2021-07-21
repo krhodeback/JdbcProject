@@ -1,33 +1,69 @@
 package jm.task.core.jdbc.dao;
 
-import java.util.EnumSet;
 import java.util.List;
+
+import javax.persistence.Query;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.hibernate.tool.schema.TargetType;
 
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
 public class UserDaoHibernateImpl implements UserDao {
     private Util util;
-    private EnumSet<TargetType> enumSet;
 
     public UserDaoHibernateImpl() {
         util = new Util();
-        enumSet = EnumSet.of(TargetType.DATABASE);
     }
 
     @Override
     public void createUsersTable() {
-        new SchemaExport().create(enumSet, util.getMetadata());
+        Session session = util.getSession();
+        Transaction transaction = null;
+        try {
+            transaction = session.beginTransaction();
+            session.createSQLQuery(
+                    "CREATE TABLE IF NOT EXISTS sys.users (  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY "
+                            + ",`name` VARCHAR(45) NOT NULL, `lastName` VARCHAR(45) NOT NULL,  `age` INT NOT NULL ) ENGINE=MEMORY")
+                    .executeUpdate();
+            transaction.commit();
+            System.out.println("Table have been created");
+        } catch (Exception e) {
+            if (transaction != null) {
+                try {
+                    transaction.rollback();
+                } catch (Exception e1) {
+                    System.out.println("Cant rollback : " + e1.getMessage());
+                }
+            }
+            System.out.println("Cant create table : " + e.getMessage());
+        } finally {
+            session.close();
+        }
     }
 
     @Override
     public void dropUsersTable() {
-        new SchemaExport().drop(enumSet, util.getMetadata());
+        Session session = util.getSession();
+        Transaction transaction = null;
+        try {
+            transaction = session.beginTransaction();
+            session.createSQLQuery("DROP TABLE IF EXISTS sys.users ").executeUpdate();
+            transaction.commit();
+            System.out.println("Table have been deleted");
+        } catch (Exception e) {
+            if (transaction != null) {
+                try {
+                    transaction.rollback();
+                } catch (Exception e1) {
+                    System.out.println("Cant rollback : " + e1.getMessage());
+                }
+            }
+            System.out.println("Cant delete teble : " + e.getMessage());
+        } finally {
+            session.close();
+        }
     }
 
     @Override
@@ -41,12 +77,12 @@ public class UserDaoHibernateImpl implements UserDao {
             transaction.commit();
             System.out.println("User " + user.getName() + " have been saved");
         } catch (Exception e) {
-            try {
-                if (transaction != null) {
+            if (transaction != null) {
+                try {
                     transaction.rollback();
+                } catch (Exception e1) {
+                    System.out.println("Cant rollback : " + e1.getMessage());
                 }
-            } catch (Exception e1) {
-                System.out.println("Cant rollback : " + e1.getMessage());
             }
             System.out.println("Cant save user : " + e.getMessage());
         } finally {
@@ -60,17 +96,13 @@ public class UserDaoHibernateImpl implements UserDao {
         Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
-            User user = (User) session.load(User.class, id);
-            if (user != null) {
-                session.delete(user);
-            }
+            Query query = session.createQuery("DELETE FROM User WHERE id= :id");
+            query.setParameter("id", id);
+            query.executeUpdate();
             transaction.commit();
-            System.out.println("User " + user.getName() + " have been removed");
+            System.out.println("User have been deleted");
         } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            System.out.println("Cant remove user : " + e.getMessage());
+            System.out.println("Cant delete user : " + e.getMessage());
         } finally {
             session.close();
         }
@@ -81,7 +113,7 @@ public class UserDaoHibernateImpl implements UserDao {
         Session session = util.getSession();
         List<User> userList = null;
         try {
-            userList = session.createQuery("SELECT a FROM User a", User.class).getResultList();
+            userList = session.createQuery("FROM User", User.class).getResultList();
         } catch (Exception e) {
             System.out.println("Cant get all users : " + e.getMessage());
         } finally {
@@ -92,10 +124,25 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void cleanUsersTable() {
-        List<User> userList = getAllUsers();
-        for (User user : userList) {
-            removeUserById(user.getId());
+        Session session = util.getSession();
+        Transaction transaction = null;
+        try {
+            transaction = session.beginTransaction();
+            session.createSQLQuery("DELETE FROM sys.users").executeUpdate();
+            transaction.commit();
+            System.out.println("Table have been cleaned");
+        } catch (Exception e) {
+            if (transaction != null) {
+                try {
+                    transaction.rollback();
+                } catch (Exception e1) {
+                    System.out.println("Cant rollback : " + e1.getMessage());
+                }
+            }
+            System.out.println("Cant cleane table : " + e.getMessage());
+        } finally {
+            session.close();
         }
-
     }
+
 }
